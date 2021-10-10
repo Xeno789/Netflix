@@ -3,11 +3,12 @@ info:
   version: "0.0.1"
   title: Netflix
 host: localhost:10010
+schemes:
+  - http
 basePath: /
 consumes:
   - application/json
 produces:
-  - application/xml
   - application/json
 paths:
   /user:
@@ -15,12 +16,13 @@ paths:
     post:
       tags:
       - "user"
+      summary: "Create a new user"
       description: Create user
       operationId: createUser
       parameters:
         - name: "body"
           in: "body"
-          description: The name of the person to whom to say hello
+          description: Create a new user
           required: true
           schema:
               $ref: "#/definitions/User"
@@ -36,7 +38,7 @@ paths:
             
   /user/login:
     x-swagger-router-controller: user
-    get:
+    post:
       tags:
       - "user"
       summary: "Logs user into the system"
@@ -45,19 +47,22 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "username"
-        in: "query"
-        description: "The user name for login"
-        required: true
-        type: "string"
-      - name: "password"
-        in: "query"
-        description: "The password for login in clear text"
-        required: true
-        type: "string"
+        - in: body
+          name: user
+          description: The user to create.
+          schema:
+            type: object
+            required:
+              - username
+              - password
+            properties:
+              username:
+                type: string
+              password:
+                type: string
       responses:
         "200":
-          description: "successful operation"
+          description: "Successfully logged in"
           schema:
             $ref: "#/definitions/User"
         "400":
@@ -65,14 +70,15 @@ paths:
           
   /user/logout:
     x-swagger-router-controller: user
-    post:
+    get:
       tags:
       - "user"
+      summary: "Logs out the User"
       description: Logs out the user
       operationId: logoutUser
       responses:
         "200":
-          description: "successful operation"
+          description: "Successfully logged out"
           schema:
             type: "string"
         default:
@@ -91,7 +97,6 @@ paths:
       description: ""
       operationId: "videoByTitle"
       produces:
-      - "application/xml"
       - "application/json"
       parameters:
       - name: "Video title"
@@ -101,7 +106,7 @@ paths:
         type: "string"
       responses:
         "200":
-          description: "successful operation"
+          description: "Video found"
           schema:
             $ref: "#/definitions/Video"
         "400":
@@ -109,7 +114,7 @@ paths:
       security:
       - Session_key: []
       
-  /video/add:
+  /queue:
     x-swagger-router-controller: video
     post:
       tags:
@@ -118,7 +123,6 @@ paths:
       description: ""
       operationId: "addVideoToQueue"
       produces:
-      - "application/xml"
       - "application/json"
       parameters:
       - name: "Video title"
@@ -132,24 +136,20 @@ paths:
           schema:
             type: "string"
         "400":
-          description: "Invalid video title"
+          description: "Video successfully added to your queue"
       security:
       - Session_key: []
-      
-  /video/listQueue:
-    x-swagger-router-controller: video
-    post:
+    get:
       tags:
       - "Video"
       summary: "List all the videos in your queue"
       description: ""
       operationId: "listVideosInQueue"
       produces:
-      - "application/xml"
       - "application/json"
       responses:
         "200":
-          description: "successful operation"
+          description: "Queue successfully listed"
           schema:
             type: "array"
             items:
@@ -159,7 +159,7 @@ paths:
       security:
       - Session_key: []
       
-  /admin/videoDatas:
+  /videos/video:
     x-swagger-router-controller: admin
     get:
       tags:
@@ -168,7 +168,6 @@ paths:
       description: ""
       operationId: "videoDatasByTitle"
       produces:
-      - "application/xml"
       - "application/json"
       parameters:
       - name: "Video title"
@@ -178,53 +177,13 @@ paths:
         type: "string"
       responses:
         "200":
-          description: "successful operation"
+          description: "Video found"
           schema:
             $ref: "#/definitions/Video"
         "400":
           description: "Invalid video title"
       security:
       - X_Admin_API_key: []
-      
-  /admin/addVideo:
-    x-swagger-router-controller: admin
-    post:
-      tags:
-      - "Admin"
-      summary: "Add a new video"
-      description: ""
-      operationId: "addVideo"
-      produces:
-      - "application/xml"
-      - "application/json"
-      parameters:
-      - name: "Video title"
-        in: "query"
-        description: "The Title of the video"
-        required: true
-        type: "string"
-      - name: "Video type"
-        in: "query"
-        description: "The type of the video(Movie / TV show)"
-        required: true
-        type: "string"
-      - name: "Video category"
-        in: "query"
-        description: "The category of the video"
-        required: true
-        type: "string"
-      responses:
-        "200":
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/Video"
-        "400":
-          description: "Video title already in use"
-      security:
-      - X_Admin_API_key: []
-      
-  /admin/updateVideo:
-    x-swagger-router-controller: admin
     patch:
       tags:
       - "Admin"
@@ -232,34 +191,23 @@ paths:
       description: ""
       operationId: "updateVideo"
       produces:
-      - "application/xml"
       - "application/json"
       parameters:
-      - name: "Video title"
-        in: "query"
-        description: "The Title of the video"
-        required: true
-        type: "string"
-      - name: "Video type"
-        in: "query"
-        description: "The type of the video(Movie / TV show)"
-        type: "string"
-      - name: "Video category"
-        in: "query"
-        description: "The category of the video"
-        type: "string"
+        - name: "body"
+          in: "body"
+          description: Update the category or the type of a video by title. You can't update the title. The type of the video is either movie or series.
+          required: true
+          schema:
+              $ref: "#/definitions/Video"
       responses:
         "200":
-          description: "successful operation"
+          description: "Video successfully updated"
           schema:
             $ref: "#/definitions/Video"
         "400":
           description: "Video title does not exist"
       security:
       - X_Admin_API_key: []
-      
-  /admin/videoDelete:
-    x-swagger-router-controller: admin
     delete:
       tags:
       - "Admin"
@@ -267,24 +215,47 @@ paths:
       description: ""
       operationId: "deleteVideoByTitle"
       produces:
-      - "application/xml"
       - "application/json"
       parameters:
       - name: "Video title"
         in: "query"
-        description: "The Title of the video"
+        description: "The Title of the video you want to delete"
         required: true
         type: "string"
       responses:
         "200":
-          description: "successful operation"
+          description: "Video successfully deleted"
           schema:
             type: "string"
         "400":
           description: "Invalid video title"
       security:
       - X_Admin_API_key: []
-  
+  /videos:
+    post:
+      tags:
+      - "Admin"
+      summary: "Add a new video"
+      description: ""
+      operationId: "addVideo"
+      produces:
+      - "application/json"
+      parameters:
+        - name: "body"
+          in: "body"
+          description: type can be either movie or series nothing else
+          required: true
+          schema:
+              $ref: "#/definitions/Video"
+      responses:
+        "200":
+          description: "Video successfully added."
+          schema:
+            $ref: "#/definitions/Video"
+        "400":
+          description: "Video title already in use"
+      security:
+      - X_Admin_API_key: []
 securityDefinitions:
   Session_key:
     type: "apiKey"
@@ -308,17 +279,30 @@ definitions:
       id:
         type: "integer"
         format: "int64"
+        description: "ID of the user"
+        example: "1"
       username:
         type: "string"
+        description: "Name of the user"
+        example: "Béla"
       password:
         type: "string"
+        description: "Password of the user"
+        example: "krumpli"
   Video:
     type: "object"
     properties:
       title:
         type: "string"
+        description: "The title of the video"
+        example: "The Lord of the Rings"
       category:
         type: "string"
+        description: "The category of the video"
+        example: "Entertaining"
       type:
         type: "string"
+        enum: [movie, series]
+        description: "The type of the video either movie or series"
+        example: "movie"
 

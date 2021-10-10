@@ -4,6 +4,7 @@ class User {
         this.username = username;
         this.password = password;
         this.ID = id;
+        this.SessionID = undefined;
     }
   
     getUsername() {
@@ -58,8 +59,8 @@ module.exports = {
 };
 
 function createUser(req, res) {
-  var body = req.swagger.params.body["value"] || 'stranger';
-  var user = new User(body.id,body.username,body.password);
+  let body = req.swagger.params.body["value"];
+  let user = new User(body.id,body.username,body.password);
   userRepo.add(user);
   res.json(user);
 }
@@ -69,6 +70,17 @@ function logoutUser(req, res) {
 }
 
 function loginUser(req, res) {
-    
-    res.json({"message": "kutya"});
+    let foundMatch = false;
+    let body = req.swagger.params.user["value"];
+    for(let i in userRepo.users){
+        let current = userRepo.users[i];
+        if(current.username == body.username && current.password == body.password){
+            current.sessionID = Math.floor(Math.random() * 100)
+            foundMatch = true;
+            res.json({"message": "Successful login", "session_key": current.sessionID})
+        }
+    }
+    if(!foundMatch){
+        res.json({"message": "Invalid username/password"});
+    }
 }
