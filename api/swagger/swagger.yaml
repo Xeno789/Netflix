@@ -58,8 +58,10 @@ paths:
             properties:
               username:
                 type: string
+                example: "Béla"
               password:
                 type: string
+                example: "krumpli"
       responses:
         "200":
           description: "Successfully logged in"
@@ -76,6 +78,12 @@ paths:
       summary: "Logs out the User"
       description: Logs out the user
       operationId: logoutUser
+      parameters:
+      - name: "sessionId"
+        in: "query"
+        description: "The session ID you got after login"
+        required: true
+        type: "string"
       responses:
         "200":
           description: "Successfully logged out"
@@ -85,8 +93,6 @@ paths:
           description: Error
           schema:
             $ref: "#/definitions/ErrorResponse"
-      security:
-      - Session_key: []
       
   /video:
     x-swagger-router-controller: video
@@ -99,7 +105,12 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "Video title"
+      - name: "sessionId"
+        in: "query"
+        description: "The session ID you got after login"
+        required: true
+        type: "string"
+      - name: "videoTitle"
         in: "query"
         description: "The Title of the video"
         required: true
@@ -111,8 +122,8 @@ paths:
             $ref: "#/definitions/Video"
         "400":
           description: "Invalid video title"
-      security:
-      - Session_key: []
+          schema:
+            $ref: "#/definitions/ErrorResponse"
       
   /queue:
     x-swagger-router-controller: video
@@ -122,10 +133,17 @@ paths:
       summary: "Add a video to your queue"
       description: ""
       operationId: "addVideoToQueue"
+      consumes:
+      - "application/octet-stream"
       produces:
       - "application/json"
       parameters:
-      - name: "Video title"
+      - name: "sessionId"
+        in: "query"
+        description: "The session ID you got after login"
+        required: true
+        type: "string"
+      - name: "videoTitle"
         in: "query"
         description: "The Title of the video"
         required: true
@@ -137,8 +155,8 @@ paths:
             type: "string"
         "400":
           description: "Video successfully added to your queue"
-      security:
-      - Session_key: []
+          schema:
+            $ref: "#/definitions/ErrorResponse"
     get:
       tags:
       - "Video"
@@ -147,6 +165,12 @@ paths:
       operationId: "listVideosInQueue"
       produces:
       - "application/json"
+      parameters:
+      - name: "sessionId"
+        in: "query"
+        description: "The session ID you got after login"
+        required: true
+        type: "string"
       responses:
         "200":
           description: "Queue successfully listed"
@@ -156,11 +180,11 @@ paths:
               $ref: "#/definitions/Video"
         "400":
           description: "Invalid video title"
-      security:
-      - Session_key: []
+          schema:
+            $ref: "#/definitions/ErrorResponse"
       
   /videos/video:
-    x-swagger-router-controller: admin
+    x-swagger-router-controller: video
     get:
       tags:
       - "Admin"
@@ -170,7 +194,12 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "Video title"
+      - name: "adminKey"
+        in: "query"
+        description: "The key that only admin's have. *super secured*"
+        required: true
+        type: "string"
+      - name: "videoTitle"
         in: "query"
         description: "The Title of the video"
         required: true
@@ -182,8 +211,6 @@ paths:
             $ref: "#/definitions/Video"
         "400":
           description: "Invalid video title"
-      security:
-      - X_Admin_API_key: []
     patch:
       tags:
       - "Admin"
@@ -193,10 +220,15 @@ paths:
       produces:
       - "application/json"
       parameters:
+        - name: "adminKey"
+          in: "query"
+          description: "The key that only admin's have. *super secured*"
+          required: true
+          type: "string"
         - name: "body"
           in: "body"
           description: Update the category or the type of a video by title. You can't update the title. The type of the video is either movie or series.
-          required: true
+          required: false
           schema:
               $ref: "#/definitions/Video"
       responses:
@@ -206,8 +238,6 @@ paths:
             $ref: "#/definitions/Video"
         "400":
           description: "Video title does not exist"
-      security:
-      - X_Admin_API_key: []
     delete:
       tags:
       - "Admin"
@@ -217,7 +247,12 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "Video title"
+      - name: "adminKey"
+        in: "query"
+        description: "The key that only admin's have. *super secured*"
+        required: true
+        type: "string"
+      - name: "videoTitle"
         in: "query"
         description: "The Title of the video you want to delete"
         required: true
@@ -229,9 +264,8 @@ paths:
             type: "string"
         "400":
           description: "Invalid video title"
-      security:
-      - X_Admin_API_key: []
   /videos:
+    x-swagger-router-controller: video
     post:
       tags:
       - "Admin"
@@ -241,9 +275,14 @@ paths:
       produces:
       - "application/json"
       parameters:
+        - name: "adminKey"
+          in: "query"
+          description: "The key that only admins have. *super secured*"
+          required: true
+          type: "string"
         - name: "body"
           in: "body"
-          description: type can be either movie or series nothing else
+          description: type can be either movie or series
           required: true
           schema:
               $ref: "#/definitions/Video"
@@ -254,17 +293,6 @@ paths:
             $ref: "#/definitions/Video"
         "400":
           description: "Video title already in use"
-      security:
-      - X_Admin_API_key: []
-securityDefinitions:
-  Session_key:
-    type: "apiKey"
-    name: "Session_key"
-    in: "header"
-  X_Admin_API_key:
-    type: "apiKey"
-    name: "X_Admin_API_key"
-    in: "header"
     
 definitions:
   ErrorResponse:
@@ -273,6 +301,8 @@ definitions:
     properties:
       message:
         type: string
+        description: "The error that occurred"
+        example: "Invalid username/password"
   User:
     type: "object"
     properties:
