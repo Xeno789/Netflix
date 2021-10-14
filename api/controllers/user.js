@@ -5,7 +5,7 @@ class User {
         this.username = username;
         this.password = password;
         this.ID = id;
-        this.SessionID = undefined;
+        this.sessionID = undefined;
         this.queue = [];
     }
   
@@ -31,7 +31,6 @@ class User {
 class UserRepository {
     constructor(){
         this.users = [];
-        this.activeSessionIds = [];
     }
     getUsers(){
         return this.users;
@@ -40,14 +39,12 @@ class UserRepository {
         return this.users.filter(user => user.sessionID == sessionID)[0];
     }
     getActiveSessionIds(){
-        return this.activeSessionIds;
-    }
-    addActiveSessionId(sessionId){
-        this.activeSessionIds.push(sessionId);
-    }
-    deleteActiveSessionId(sessionId){
-        let index = this.activeSessionIds.findIndex(id => id == sessionId);
-        this.activeSessionIds.splice(index, 1);
+        let activeUsers = this.users.filter(user => user.sessionID != undefined);
+        let activeSessionIds = []
+        for(let i in activeUsers){
+            activeSessionIds.push(activeUsers[i].sessionID)
+        }
+        return activeSessionIds;
     }
     add(user){
         this.users.push(user);
@@ -94,7 +91,6 @@ function logoutUser(req, res) {
         response = ({"message":"Logout failed, Invalid session ID"})
     }
     else{
-        userRepo.deleteActiveSessionId(user.sessionID);
         user.sessionID = undefined;
         response = {"message": "Successful logout"};
     }
@@ -107,7 +103,6 @@ function loginUser(req, res) {
         let current = userRepo.users[i];
         if(current.username == body.username && current.password == body.password){
             current.sessionID = Math.floor(Math.random() * 100)
-            userRepo.addActiveSessionId(current.sessionID);
             foundMatch = true;
             res.json({"message": "Successful login", "session_key": current.sessionID})
         }

@@ -45,7 +45,8 @@ let videoRepo = new VideoRepository();
 function addVideoToQueue(req, res){
     let response = {"message": "Successfuly added."};
     let sessionId = parseInt(req.swagger.params.sessionId.value);
-    if(userRepo.activeSessionIds.includes(sessionId)){
+    let activeSessionIds = userRepo.getActiveSessionIds();
+    if(activeSessionIds.includes(sessionId)){
         let video = videoRepo.findVideoByTitle(req.swagger.params.videoTitle.value)
         if(video == undefined){
             response = {"message": "Title not found"};
@@ -61,7 +62,8 @@ function addVideoToQueue(req, res){
 }
 function videoByTitle(req, res){
     let response;
-    if(userRepo.activeSessionIds.includes(parseInt(req.swagger.params.sessionId.value))){
+    let activeSessionIds = userRepo.getActiveSessionIds();
+    if(activeSessionIds.includes(parseInt(req.swagger.params.sessionId.value))){
         response = videoRepo.findVideoByTitle(req.swagger.params.videoTitle.value);
         if(response == undefined){
             response = {"message": "Title not found"};
@@ -76,7 +78,8 @@ function videoByTitle(req, res){
 function listVideosInQueue(req, res){
     let response;
     let sessionId = parseInt(req.swagger.params.sessionId.value)
-    if(userRepo.activeSessionIds.includes(sessionId)){
+    let activeSessionIds = userRepo.getActiveSessionIds();
+    if(activeSessionIds.includes(sessionId)){
         response = userRepo.getUserBySessionId(sessionId).getQueue();
     }
     else{
