@@ -1,11 +1,12 @@
 'use strict';
-
-var SwaggerExpress = require('swagger-express-mw');
-var app = require('express')();
+const swaggerSecurity = require('./api/helpers/swagger_security.js');
+let SwaggerExpress = require('swagger-express-mw');
+let app = require('express')();
 module.exports = app; // for testing
 
-var config = {
-  appRoot: __dirname // required config
+const config = {
+  appRoot: __dirname, // required config
+  swaggerSecurityHandlers: swaggerSecurity.swaggerSecurityHandlers
 };
 
 SwaggerExpress.create(config, function(err, swaggerExpress) {
@@ -14,10 +15,7 @@ SwaggerExpress.create(config, function(err, swaggerExpress) {
   // install middleware
   swaggerExpress.register(app);
 
-  var port = process.env.PORT || 10010;
+  let port = process.env.PORT || 10010;
   app.listen(port);
 
-  if (swaggerExpress.runner.swagger.paths['/hello']) {
-    console.log('try this:\ncurl http://127.0.0.1:' + port + '/hello?name=Scott');
-  }
 });

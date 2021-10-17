@@ -29,7 +29,6 @@ swagger:
       - _swagger_validate
       - express_compatibility
       - _router
-
     # pipe to serve swagger (endpoint is in swagger.yaml)
     swagger_raw:
       name: swagger_raw

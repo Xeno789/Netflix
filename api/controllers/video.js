@@ -44,112 +44,70 @@ let videoRepo = new VideoRepository();
 
 function addVideoToQueue(req, res){
     let response = {"message": "Successfuly added."};
-    let sessionId = parseInt(req.swagger.params.sessionId.value);
-    let activeSessionIds = userRepo.getActiveSessionIds();
-    if(activeSessionIds.includes(sessionId)){
-        let video = videoRepo.findVideoByTitle(req.swagger.params.videoTitle.value)
-        if(video == undefined){
-            response = {"message": "Title not found"};
-        }
-        else{
-            userRepo.getUserBySessionId(sessionId).addToQueue(video);
-        }
+    let sessionId = req.headers.session_key
+    let video = videoRepo.findVideoByTitle(req.swagger.params.videoTitle.value)
+    if(video === undefined){
+        response = {"message": "Title not found"};
     }
     else{
-        response = {"message": "invalid session ID"};
+        userRepo.getUserBySessionId(sessionId).addToQueue(video);
     }
     res.json(response);
 }
 function videoByTitle(req, res){
-    let response;
-    let activeSessionIds = userRepo.getActiveSessionIds();
-    if(activeSessionIds.includes(parseInt(req.swagger.params.sessionId.value))){
-        response = videoRepo.findVideoByTitle(req.swagger.params.videoTitle.value);
-        if(response == undefined){
-            response = {"message": "Title not found"};
-        }
-    }
-    else{
-        response = {"message": "invalid session ID"};
+    let response = videoRepo.findVideoByTitle(req.swagger.params.videoTitle.value);;
+    if(response === undefined){
+        response = {"message": "Title not found"};
     }
     res.json(response);
     return response;
 }
 function listVideosInQueue(req, res){
-    let response;
-    let sessionId = parseInt(req.swagger.params.sessionId.value)
-    let activeSessionIds = userRepo.getActiveSessionIds();
-    if(activeSessionIds.includes(sessionId)){
-        response = userRepo.getUserBySessionId(sessionId).getQueue();
-    }
-    else{
-        response = {"message": "invalid session ID"};
+    let response = userRepo.getUserBySessionId(req.headers.session_key).getQueue();
+    if (response === undefined){
+        response = {"message": "User not found."};
     }
     res.json(response);
 }
 
 
 function videoDatasByTitle(req, res){
-    let response;
-    if(checkIfAdminKeyIsValid(req.swagger.params.adminKey.value)){
-        response = videoRepo.findVideoByTitle(req.swagger.params.videoTitle.value)
-        if(response == undefined){
+    let response = videoRepo.findVideoByTitle(req.swagger.params.videoTitle.value);
+        if(response === undefined){
             response = {"message": "Title not found."}
         }
-
-    }
-    else{
-        response = {"message": "invalid admin key"};
-    }
     res.json(response);
 }
 
 function updateVideo(req, res){
     let response;
-    if(checkIfAdminKeyIsValid(req.swagger.params.adminKey.value)){
-        let body = req.swagger.params.body["value"];
-        let video = videoRepo.findVideoByTitle(body.title);
-        if(video == undefined){
-            response = {"message": "Title not found"}
-        }
-        else{
-            video.updateVideo(body.category, body.type);
-            response = video;
-        }
+    let body = req.swagger.params.body["value"];
+    let video = videoRepo.findVideoByTitle(body.title);
+    if(video === undefined){
+        response = {"message": "Title not found"}
     }
     else{
-        response = {"message": "invalid admin key"};
+        video.updateVideo(body.category, body.type);
+        response = video;
     }
     res.json(response);
 }
 function deleteVideoByTitle(req, res){
     let response;
-    if(checkIfAdminKeyIsValid(req.swagger.params.adminKey.value)){
-        response = videoRepo.deleteVideoByTitle(req.swagger.params.videoTitle.value);
-        if(response == undefined){
-            response = {"message": "Didnt find the given video title in the database."}
-        }
-    }
-    else{
-        response = {"message": "invalid admin key"};
+    response = videoRepo.deleteVideoByTitle(req.swagger.params.videoTitle.value);
+    if(response === undefined){
+        response = {"message": "Didnt find the given video title in the database."}
     }
     res.json(response);
 }
 function addVideo(req, res){
     let response;
-    if(checkIfAdminKeyIsValid(req.swagger.params.adminKey.value)){
-        let body = req.swagger.params.body["value"];
-        videoRepo.addVideo(body.title, body.category, body.type);
-        response = {"message": "Video added"};
-    }
-    else{
-        response = {"message": "invalid admin key"};
-    }
+    let body = req.swagger.params.body["value"];
+    videoRepo.addVideo(body.title, body.category, body.type);
+    response = {"message": "Video added"};
     res.json(response);
 }
-function checkIfAdminKeyIsValid(adminKey){
-    return parseInt(adminKey) == admin.adminKey;
-}
+
 
 module.exports = {
     addVideoToQueue: addVideoToQueue,

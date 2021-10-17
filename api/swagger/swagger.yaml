@@ -10,8 +10,17 @@ consumes:
   - application/json
 produces:
   - application/json
+securityDefinitions:
+  Session_key:
+    type: "apiKey"
+    name: "Session_key"
+    in: "header"
+  X_Admin_API_key:
+    type: "apiKey"
+    name: "X_Admin_API_key"
+    in: "header"
 paths:
-  /user:
+  /users:
     x-swagger-router-controller: user
     post:
       tags:
@@ -36,7 +45,7 @@ paths:
           schema:
             $ref: "#/definitions/ErrorResponse"
             
-  /user/login:
+  /users/login:
     x-swagger-router-controller: user
     post:
       tags:
@@ -70,7 +79,7 @@ paths:
         "400":
           description: "Invalid username/password supplied"
           
-  /user/logout:
+  /users/logout:
     x-swagger-router-controller: user
     get:
       tags:
@@ -78,12 +87,6 @@ paths:
       summary: "Logs out the User"
       description: Logs out the user
       operationId: logoutUser
-      parameters:
-      - name: "sessionId"
-        in: "query"
-        description: "The session ID you got after login"
-        required: true
-        type: "string"
       responses:
         "200":
           description: "Successfully logged out"
@@ -93,38 +96,9 @@ paths:
           description: Error
           schema:
             $ref: "#/definitions/ErrorResponse"
-      
-  /video:
-    x-swagger-router-controller: video
-    get:
-      tags:
-      - "Video"
-      summary: "Get a video by Title"
-      description: ""
-      operationId: "videoByTitle"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "sessionId"
-        in: "query"
-        description: "The session ID you got after login"
-        required: true
-        type: "string"
-      - name: "videoTitle"
-        in: "query"
-        description: "The Title of the video"
-        required: true
-        type: "string"
-      responses:
-        "200":
-          description: "Video found"
-          schema:
-            $ref: "#/definitions/Video"
-        "400":
-          description: "Invalid video title"
-          schema:
-            $ref: "#/definitions/ErrorResponse"
-      
+      security:
+      - Session_key: []
+  
   /queue:
     x-swagger-router-controller: video
     post:
@@ -138,11 +112,6 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "sessionId"
-        in: "query"
-        description: "The session ID you got after login"
-        required: true
-        type: "string"
       - name: "videoTitle"
         in: "query"
         description: "The Title of the video"
@@ -157,6 +126,8 @@ paths:
           description: "Video successfully added to your queue"
           schema:
             $ref: "#/definitions/ErrorResponse"
+      security:
+      - Session_key: []
     get:
       tags:
       - "Video"
@@ -165,12 +136,6 @@ paths:
       operationId: "listVideosInQueue"
       produces:
       - "application/json"
-      parameters:
-      - name: "sessionId"
-        in: "query"
-        description: "The session ID you got after login"
-        required: true
-        type: "string"
       responses:
         "200":
           description: "Queue successfully listed"
@@ -182,23 +147,20 @@ paths:
           description: "Invalid video title"
           schema:
             $ref: "#/definitions/ErrorResponse"
+      security:
+      - Session_key: []
       
   /videos/video:
     x-swagger-router-controller: video
     get:
       tags:
-      - "Admin"
-      summary: "Get a video's data by Title"
+      - "Video"
+      summary: "Get a video by Title"
       description: ""
-      operationId: "videoDatasByTitle"
+      operationId: "videoByTitle"
       produces:
       - "application/json"
       parameters:
-      - name: "adminKey"
-        in: "query"
-        description: "The key that only admin's have. *super secured*"
-        required: true
-        type: "string"
       - name: "videoTitle"
         in: "query"
         description: "The Title of the video"
@@ -211,6 +173,10 @@ paths:
             $ref: "#/definitions/Video"
         "400":
           description: "Invalid video title"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      security:
+      - Session_key: []
     patch:
       tags:
       - "Admin"
@@ -220,11 +186,6 @@ paths:
       produces:
       - "application/json"
       parameters:
-        - name: "adminKey"
-          in: "query"
-          description: "The key that only admin's have. *super secured*"
-          required: true
-          type: "string"
         - name: "body"
           in: "body"
           description: Update the category or the type of a video by title. You can't update the title. The type of the video is either movie or series.
@@ -238,6 +199,8 @@ paths:
             $ref: "#/definitions/Video"
         "400":
           description: "Video title does not exist"
+      security:
+      - X_Admin_API_key: []
     delete:
       tags:
       - "Admin"
@@ -247,11 +210,6 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "adminKey"
-        in: "query"
-        description: "The key that only admin's have. *super secured*"
-        required: true
-        type: "string"
       - name: "videoTitle"
         in: "query"
         description: "The Title of the video you want to delete"
@@ -264,6 +222,8 @@ paths:
             type: "string"
         "400":
           description: "Invalid video title"
+      security:
+      - X_Admin_API_key: []
   /videos:
     x-swagger-router-controller: video
     post:
@@ -275,11 +235,6 @@ paths:
       produces:
       - "application/json"
       parameters:
-        - name: "adminKey"
-          in: "query"
-          description: "The key that only admins have. *super secured*"
-          required: true
-          type: "string"
         - name: "body"
           in: "body"
           description: type can be either movie or series
@@ -293,6 +248,8 @@ paths:
             $ref: "#/definitions/Video"
         "400":
           description: "Video title already in use"
+      security:
+      - X_Admin_API_key: []
     
 definitions:
   ErrorResponse:

@@ -86,8 +86,8 @@ function createUser(req, res) {
 }
 function logoutUser(req, res) {
     let response;
-    let user = userRepo.getUserBySessionId(parseInt(req.swagger.params.sessionId.value));
-    if(user == undefined){
+    let user = userRepo.getUserBySessionId(req.headers.session_key);
+    if(user === undefined){
         response = ({"message":"Logout failed, Invalid session ID"})
     }
     else{
