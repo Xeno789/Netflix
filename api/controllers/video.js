@@ -1,111 +1,109 @@
-let userRepo = require("./user").userRepo;
-const admin = require("../helpers/admin").admin;
-
-class Video{
-    constructor(title, category, type){
-        this.title = title;
-        this.category = category;
-        this.type = type;
-    }
-    updateVideo(category = undefined, type = undefined){
-        if(category != undefined){
-            this.category = category;
-        }
-        if(type != undefined){
-            this.category = category;
-        }
-    }
-}
-class VideoRepository{
-    constructor(){
-        this.videos = [new Video("The Lord of the Rings", "Fun", "movie")]
-    }
-    findVideoByTitle(title){
-        let foundVideo = this.videos.filter(video => video.title == title);
-        if(foundVideo == []){
-            return undefined;
-        }
-        return foundVideo[0];
-    }
-    deleteVideoByTitle(title){
-        let index = this.videos.findIndex(video => video.title == title);
-        if(index == -1){
-            return undefined;
-        }
-        this.videos.splice(index, 1);
-        return {"message": "Video deleted"}
-    }
-    addVideo(title, category, type){
-        this.videos.push(new Video(title, category, type));
-    }
-}
-
-let videoRepo = new VideoRepository();
+'use strict';
+const mongoose = require('mongoose');
+const Video = require('../models/video');
+const User = require('../models/user');
 
 function addVideoToQueue(req, res){
-    let response = {"message": "Successfuly added."};
-    let sessionId = req.headers.session_key
-    let video = videoRepo.findVideoByTitle(req.swagger.params.videoTitle.value)
-    if(video === undefined){
-        response = {"message": "Title not found"};
-    }
-    else{
-        userRepo.getUserBySessionId(sessionId).addToQueue(video);
-    }
-    res.json(response);
+    Video.findOne({title: req.swagger.params.videoTitle.value})
+    .exec()
+    .then(async(video) => {
+        console.log(video)
+        if(video === null){
+            res.json({"message": "Video not found"});
+        }
+        else{
+            await User.updateOne({sessionId: req.headers.session_key}, { $push: { queue: video } })
+            res.json({"message": "Successfully added."});
+        }
+    })
 }
 function videoByTitle(req, res){
-    let response = videoRepo.findVideoByTitle(req.swagger.params.videoTitle.value);;
-    if(response === undefined){
-        response = {"message": "Title not found"};
-    }
-    res.json(response);
-    return response;
+    Video.findOne({title: req.swagger.params.videoTitle.value})
+    .exec()
+    .then(async(video) => {
+        if(video === null){
+            res.json({"error": "Video not found"});
+        }
+        else{
+            res.json(video); 
+        }
+    })
+    .catch(err => {
+        res.json({"error": "Video not found"});
+    });
 }
 function listVideosInQueue(req, res){
-    let response = userRepo.getUserBySessionId(req.headers.session_key).getQueue();
-    if (response === undefined){
-        response = {"message": "User not found."};
-    }
-    res.json(response);
+    User.findOne({sessionId: req.headers.session_key})
+    .exec()
+    .then(user =>{
+        console.log(user.queue)
+        res.json(user.queue);
+    })
+    .catch(err =>{
+        res.json({"error": err});
+    })
 }
 
-
-function videoDatasByTitle(req, res){
-    let response = videoRepo.findVideoByTitle(req.swagger.params.videoTitle.value);
-        if(response === undefined){
-            response = {"message": "Title not found."}
-        }
-    res.json(response);
+function getVideos(req, res){
+    Video.find()
+    .exec()
+    .then(videos =>{
+        res.json(videos);
+    })
+    .catch(err =>{
+        res.json({"error": err});
+    })
 }
 
 function updateVideo(req, res){
-    let response;
+    let updateOps = {}
     let body = req.swagger.params.body["value"];
-    let video = videoRepo.findVideoByTitle(body.title);
-    if(video === undefined){
-        response = {"message": "Title not found"}
+    if(body.category != undefined){
+        updateOps["category"] = body.category;
     }
-    else{
-        video.updateVideo(body.category, body.type);
-        response = video;
+    if(body.type != undefined){
+        updateOps["type"] = body.type;
     }
-    res.json(response);
+    Video.updateOne({title: body.title}, { $set: updateOps})
+    .exec()
+    .then(result =>{
+        if(result.modifiedCount){
+            res.json({"message": "Successfully updated."});
+        }
+        else{
+            res.json({"error": "Video not found or nothing changed."});
+        }
+    })
+    .catch(err =>{
+        res.json({"error": "Video not found"});
+    })
 }
 function deleteVideoByTitle(req, res){
-    let response;
-    response = videoRepo.deleteVideoByTitle(req.swagger.params.videoTitle.value);
-    if(response === undefined){
-        response = {"message": "Didnt find the given video title in the database."}
-    }
-    res.json(response);
+    Video.deleteOne({title: req.swagger.params.videoTitle.value})
+    .exec()
+    .then(result =>{
+        if(result.deletedCount){
+            res.json({"message": "Video deleted"});
+        }
+        else{
+            res.json({"message": "Didnt find the given video title in the database."});
+        }
+    })
 }
 function addVideo(req, res){
-    let response;
     let body = req.swagger.params.body["value"];
-    videoRepo.addVideo(body.title, body.category, body.type);
-    response = {"message": "Video added"};
-    res.json(response);
+    const video = new Video({
+        _id : mongoose.Types.ObjectId(),
+        title: body.title,
+        category: body.category,
+        type: body.type,
+        });
+    video.save().then(result => {
+        res.json(video);
+    })
+    .catch(err => {
+        res.json({"error": "Title already in use"});
+    })
 }
 
 
@@ -113,8 +111,8 @@ module.exports = {
     addVideoToQueue: addVideoToQueue,
     videoByTitle: videoByTitle,
     listVideosInQueue: listVideosInQueue,
-    videoDatasByTitle: videoDatasByTitle,
     updateVideo: updateVideo,
     deleteVideoByTitle: deleteVideoByTitle,
-    addVideo: addVideo
+    addVideo: addVideo,
+    getVideos: getVideos
 }

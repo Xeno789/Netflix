@@ -26,22 +26,22 @@ paths:
       tags:
       - "user"
       summary: "Create a new user"
-      description: Create user
+      description: "Create user"
       operationId: createUser
       parameters:
         - name: "body"
           in: "body"
-          description: Create a new user
+          description: "Create a new user"
           required: true
           schema:
               $ref: "#/definitions/User"
       responses:
         "200":
-          description: Success
+          description: "Success"
           schema:
             $ref: "#/definitions/User"
         default:
-          description: Error
+          description: "Error"
           schema:
             $ref: "#/definitions/ErrorResponse"
             
@@ -52,13 +52,13 @@ paths:
       - "user"
       summary: "Logs user into the system"
       description: ""
-      operationId: "loginUser"
+      operationId: loginUser
       produces:
       - "application/json"
       parameters:
-        - in: body
-          name: user
-          description: The user to create.
+        - in: "body"
+          name: "user"
+          description: "The user to create."
           schema:
             type: object
             required:
@@ -75,7 +75,15 @@ paths:
         "200":
           description: "Successfully logged in"
           schema:
-            $ref: "#/definitions/User"
+            type: object
+            properties:
+              message:
+                type: string
+                example: Successful login
+              session_key:
+                type: integer
+                example: 37
+              
         "400":
           description: "Invalid username/password supplied"
           
@@ -85,15 +93,15 @@ paths:
       tags:
       - "user"
       summary: "Logs out the User"
-      description: Logs out the user
+      description: "Logs out the user"
       operationId: logoutUser
       responses:
         "200":
           description: "Successfully logged out"
           schema:
-            type: "string"
+            type: string
         default:
-          description: Error
+          description: "Error"
           schema:
             $ref: "#/definitions/ErrorResponse"
       security:
@@ -106,7 +114,7 @@ paths:
       - "Video"
       summary: "Add a video to your queue"
       description: ""
-      operationId: "addVideoToQueue"
+      operationId: addVideoToQueue
       consumes:
       - "application/octet-stream"
       produces:
@@ -116,12 +124,12 @@ paths:
         in: "query"
         description: "The Title of the video"
         required: true
-        type: "string"
+        type: string
       responses:
         "200":
           description: "successful operation"
           schema:
-            type: "string"
+            type: string
         "400":
           description: "Video successfully added to your queue"
           schema:
@@ -133,14 +141,14 @@ paths:
       - "Video"
       summary: "List all the videos in your queue"
       description: ""
-      operationId: "listVideosInQueue"
+      operationId: listVideosInQueue
       produces:
       - "application/json"
       responses:
         "200":
           description: "Queue successfully listed"
           schema:
-            type: "array"
+            type: array
             items:
               $ref: "#/definitions/Video"
         "400":
@@ -157,7 +165,7 @@ paths:
       - "Video"
       summary: "Get a video by Title"
       description: ""
-      operationId: "videoByTitle"
+      operationId: videoByTitle
       produces:
       - "application/json"
       parameters:
@@ -165,7 +173,7 @@ paths:
         in: "query"
         description: "The Title of the video"
         required: true
-        type: "string"
+        type: string
       responses:
         "200":
           description: "Video found"
@@ -182,13 +190,13 @@ paths:
       - "Admin"
       summary: "Update a video"
       description: ""
-      operationId: "updateVideo"
+      operationId: updateVideo
       produces:
       - "application/json"
       parameters:
         - name: "body"
           in: "body"
-          description: Update the category or the type of a video by title. You can't update the title. The type of the video is either movie or series.
+          description: "Update the category or the type of a video by title. You can't update the title. The type of the video is either movie or series."
           required: false
           schema:
               $ref: "#/definitions/Video"
@@ -206,7 +214,7 @@ paths:
       - "Admin"
       summary: "Delete a video by Title"
       description: ""
-      operationId: "deleteVideoByTitle"
+      operationId: deleteVideoByTitle
       produces:
       - "application/json"
       parameters:
@@ -214,12 +222,12 @@ paths:
         in: "query"
         description: "The Title of the video you want to delete"
         required: true
-        type: "string"
+        type: string
       responses:
         "200":
           description: "Video successfully deleted"
           schema:
-            type: "string"
+            type: string
         "400":
           description: "Invalid video title"
       security:
@@ -231,7 +239,7 @@ paths:
       - "Admin"
       summary: "Add a new video"
       description: ""
-      operationId: "addVideo"
+      operationId: addVideo
       produces:
       - "application/json"
       parameters:
@@ -250,6 +258,25 @@ paths:
           description: "Video title already in use"
       security:
       - X_Admin_API_key: []
+    get:
+      tags:
+      - "Video"
+      summary: "List all available videos"
+      description: ""
+      operationId: getVideos
+      produces:
+      - "application/json"
+      responses:
+        "200":
+          description: "Videos successfully listed."
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Video"
+        "400":
+          description: "Unexpected error"
+      security:
+      - Session_key: []
     
 definitions:
   ErrorResponse:
@@ -261,34 +288,29 @@ definitions:
         description: "The error that occurred"
         example: "Invalid username/password"
   User:
-    type: "object"
+    type: object
     properties:
-      id:
-        type: "integer"
-        format: "int64"
-        description: "ID of the user"
-        example: "1"
       username:
-        type: "string"
+        type: string
         description: "Name of the user"
         example: "Béla"
       password:
-        type: "string"
+        type: string
         description: "Password of the user"
         example: "krumpli"
   Video:
-    type: "object"
+    type: object
     properties:
       title:
-        type: "string"
+        type: string
         description: "The title of the video"
         example: "The Lord of the Rings"
       category:
-        type: "string"
+        type: string
         description: "The category of the video"
         example: "Entertaining"
       type:
-        type: "string"
+        type: string
         enum: [movie, series]
         description: "The type of the video either movie or series"
         example: "movie"

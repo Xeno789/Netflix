@@ -2,7 +2,10 @@
 const swaggerSecurity = require('./api/helpers/swagger_security.js');
 let SwaggerExpress = require('swagger-express-mw');
 let app = require('express')();
+const mongoose = require('mongoose');
 module.exports = app; // for testing
+
+mongoose.connect('mongodb+srv://admin:admin@netflix.vlpaz.mongodb.net/myFirstDatabase?retryWrites=true&w=majority');
 
 const config = {
   appRoot: __dirname, // required config
