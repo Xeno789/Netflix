@@ -7,7 +7,6 @@ function addVideoToQueue(req, res){
     Video.findOne({title: req.swagger.params.videoTitle.value})
     .exec()
     .then(async(video) => {
-        console.log(video)
         if(video === null){
             res.json({"message": "Video not found"});
         }
@@ -36,7 +35,6 @@ function listVideosInQueue(req, res){
     User.findOne({sessionId: req.headers.session_key})
     .exec()
     .then(user =>{
-        console.log(user.queue)
         res.json(user.queue);
     })
     .catch(err =>{
