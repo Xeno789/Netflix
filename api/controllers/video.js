@@ -1,107 +1,117 @@
 'use strict';
-const mongoose = require('mongoose');
-const Video = require('../models/video');
-const User = require('../models/user');
+const request = require('request');
 
 function addVideoToQueue(req, res){
-    Video.findOne({title: req.swagger.params.videoTitle.value})
-    .exec()
-    .then(async(video) => {
-        if(video === null){
-            res.json({"message": "Video not found"});
+    request.get({url:'http://localhost:10010/api/v1/Video'}, async function(err, httpResponse, body){
+        if (!err && httpResponse.statusCode == 200){
+            const json = JSON.parse(body);
+            const videoResponse = json.find((video) => video.title == req.swagger.params.videoTitle.value);
+
+            request.get({url:'http://localhost:10010/api/v1/User'}, async function(err, httpResponse, body){
+                if (!err && httpResponse.statusCode == 200){
+                    const json = JSON.parse(body);
+                    const userResponse = json.find((user) => user.sessionId == req.headers.session_key);
+
+                    const url = `http://localhost:10010/api/v1/User/${userResponse._id}`;
+                    let queue = userResponse.queue;
+                    queue.push(videoResponse)
+                    console.log(queue);
+                    request.patch({url: url, json:{"queue": queue},},function(err, httpResponse, body){
+                        if (!err && httpResponse.statusCode == 200){
+                            res.json({"message": "Successfully added."});
+                            return;
+                        }
+                        res.json({"message": "Unexpected error"});
+                        return;
+                    });
+                }
+            })
         }
-        else{
-            await User.updateOne({sessionId: req.headers.session_key}, { $push: { queue: video } })
-            res.json({"message": "Successfully added."});
-        }
-    })
-}
-function videoByTitle(req, res){
-    Video.findOne({title: req.swagger.params.videoTitle.value})
-    .exec()
-    .then(async(video) => {
-        if(video === null){
-            res.json({"error": "Video not found"});
-        }
-        else{
-            res.json(video); 
-        }
-    })
-    .catch(err => {
-        res.json({"error": "Video not found"});
     });
 }
-function listVideosInQueue(req, res){
-    User.findOne({sessionId: req.headers.session_key})
-    .exec()
-    .then(user =>{
-        res.json(user.queue);
+function videoByTitle(req, res){
+    request.get({url:'http://localhost:10010/api/v1/Video'}, async function(err, httpResponse, body){
+        if (!err && httpResponse.statusCode == 200){
+            const json = JSON.parse(body);
+            const userResponse = json.find((video) => video.title == req.swagger.params.videoTitle.value);
+            if(userResponse === undefined){
+                res.json({"error": "Video not found"});
+                return;
+            }
+            res.json(userResponse);
+            return;
+        }
+        res.json({"error": "Unexpected error"});
+        return;
     })
-    .catch(err =>{
-        res.json({"error": err});
+}
+function listVideosInQueue(req, res){
+    request.get({url:'http://localhost:10010/api/v1/User'}, async function(err, httpResponse, body){
+        if (!err && httpResponse.statusCode == 200){
+            const json = JSON.parse(body);
+            const userResponse = json.find((user) => user.sessionId == req.headers.session_key);
+            request.get({url:`http://localhost:10010/api/v1/User/${userResponse._id}`}, async function(err, httpResponse, body){
+                res.json(JSON.parse(body).queue);
+            });
+        }
     })
 }
 
 function getVideos(req, res){
-    Video.find()
-    .exec()
-    .then(videos =>{
-        res.json(videos);
-    })
-    .catch(err =>{
-        res.json({"error": err});
-    })
+    request.get({url:'http://localhost:10010/api/v1/Video'}, async function(err, httpResponse, body){
+        res.json(JSON.parse(body));
+    });
 }
 
 function updateVideo(req, res){
-    let updateOps = {}
-    let body = req.swagger.params.body["value"];
-    if(body.category != undefined){
-        updateOps["category"] = body.category;
-    }
-    if(body.type != undefined){
-        updateOps["type"] = body.type;
-    }
-    Video.updateOne({title: body.title}, { $set: updateOps})
-    .exec()
-    .then(result =>{
-        if(result.modifiedCount){
-            res.json({"message": "Successfully updated."});
+    let apiRequestBody = req.swagger.params.body["value"];
+    request.get({url:'http://localhost:10010/api/v1/Video'}, async function(err, httpResponse, body){
+        console.log(httpResponse.statusCode);
+        if (!err && httpResponse.statusCode == 200){
+            const json = JSON.parse(body);
+            const videoResponse = json.find((video) => video.title == apiRequestBody.title);
+            request.patch({url:`http://localhost:10010/api/v1/Video/${videoResponse._id}`, json:{"category": apiRequestBody.category, "type": apiRequestBody.type}},async function(err, httpResponse, body){
+                res.json(body);
+                return;
+            });
         }
         else{
-            res.json({"error": "Video not found or nothing changed."});
+            res.json({"error": "Unexpected error"});
+            return;
         }
-    })
-    .catch(err =>{
-        res.json({"error": "Video not found"});
     })
 }
 function deleteVideoByTitle(req, res){
-    Video.deleteOne({title: req.swagger.params.videoTitle.value})
-    .exec()
-    .then(result =>{
-        if(result.deletedCount){
-            res.json({"message": "Video deleted"});
+    request.get({url:'http://localhost:10010/api/v1/Video'}, async function(err, httpResponse, body){
+        if (!err && httpResponse.statusCode == 200){
+            const json = JSON.parse(body);
+            const videoResponse = json.find((video) => video.title == req.swagger.params.videoTitle.value);
+            if(videoResponse === undefined){
+                res.json({"error": "Video not found"});
+                return;
+            }
+            request.delete({url:`http://localhost:10010/api/v1/Video/${videoResponse._id}`},async function(err, httpResponse, body){
+                if (!err && httpResponse.statusCode == 204){
+                    res.json({"message": "Video deleted"});
+                    return;
+                }
+            });
         }
         else{
-            res.json({"message": "Didnt find the given video title in the database."});
+            res.json({"error": "Unexpected error"});
+            return;
         }
     })
 }
 function addVideo(req, res){
     let body = req.swagger.params.body["value"];
-    const video = new Video({
-        _id : mongoose.Types.ObjectId(),
-        title: body.title,
-        category: body.category,
-        type: body.type,
-        });
-    video.save().then(result => {
-        res.json(video);
-    })
-    .catch(err => {
-        res.json({"error": "Title already in use"});
-    })
+    request.post({url:'http://localhost:10010/api/v1/Video', json:{title: body.title, category: body.category, type: body.type}}, function(err, httpResponse, body){
+        if (!err && httpResponse.statusCode == 201){
+            res.json(body);
+            return;
+        }
+        res.json({"error":"Title already exists."});
+    });
 }
 
 

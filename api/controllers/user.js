@@ -1,52 +1,63 @@
 'use strict';
-const mongoose = require('mongoose');
-const User = require('../models/user');
-
+const request = require('request');
 
 function createUser(req, res) {
     let body = req.swagger.params.body["value"];
-    const user = new User({
-        _id : mongoose.Types.ObjectId(),
-        username: body.username,
-        password: body.password,
-        sessionId: null,
-        queue: []
-        });
-    user.save().then(result => {
-        res.json(user);
-    })
-    .catch(err => {
-        res.json({"error": "username already in use"});
-    })
+    if(Object.keys(body).length === 0){
+        res.json({"error":"no parameters"});
+        return;
+    }
+    request.post({url:'http://localhost:10010/api/v1/User', json:{username: body.username, password: body.password}}, function(err, httpResponse, body){
+        if (!err && httpResponse.statusCode == 201){
+            res.json(body);
+            return;
+        }
+        res.json({"error":"Username already exists."});
+    });
 }
 function logoutUser(req, res) {
-    User.find({sessionId:req.headers.session_key})
-    .exec()
-    .then(async(users) => {
-        if(users.length === 0){
-            res.json({"message": "Logout failed, Invalid session ID"});
+    request.get({url:'http://localhost:10010/api/v1/User'}, async function(err, httpResponse, body){
+        if (!err && httpResponse.statusCode == 200){
+            const json = JSON.parse(body);
+            const response = json.find((user) => user.sessionId == req.headers.session_key);
+
+            const url = `http://localhost:10010/api/v1/User/${response._id}`;
+            request.patch({url: url, json:{"sessionId": null}},function(err, httpResponse, body){
+                if (!err && httpResponse.statusCode == 200){
+                    res.json({"message": "Successful logout"});
+                    return;
+                }
+                res.json({"message": "Unexpected error"});
+                return;
+            });
         }
-        await User.updateOne({sessionId: users[0].sessionId},{sessionId : null});
-        res.json({"message": "Successful logout"});
-    })
-    .catch(err => {
-        res.json({"error": err});
-    })
+    });
 }
+
 function loginUser(req, res) {
-    let body = req.swagger.params.user["value"];
-    User.find({username: body.username, password: body.password})
-    .exec()
-    .then(async(users) => {
-        if(users.length === 0){
-            res.json({"message": "Invalid username/password"});
+    request.get({url:'http://localhost:10010/api/v1/User'}, async function(err, httpResponse, body){
+        if (!err && httpResponse.statusCode == 200){
+            const apiRequestBody = req.swagger.params.user["value"];
+            const json = JSON.parse(body);
+            
+            const response = json.find((user) => user.username === apiRequestBody.username && user.password === apiRequestBody.password);
+            if(response === undefined){
+                res.json({"error":"Invalid username/password"});
+                return;
+            }
+
+            let randomNumber = Math.floor(Math.random() * 100);
+            const url = `http://localhost:10010/api/v1/User/${response._id}`;
+            console.log(url);
+            request.patch({url: url, json:{"sessionId": randomNumber}},function(err, httpResponse, body){
+                if (!err && httpResponse.statusCode == 200){
+                    res.json({"message": "Successful login", "session_key": randomNumber});
+                    return;
+                }
+                res.json({"error":"Unexpected error"});
+                return;
+            });
         }
-        let randomNumber = Math.floor(Math.random() * 100);
-        await User.updateOne({username: users[0].username},{sessionId : randomNumber});
-        res.json({"message": "Successful login", "session_key": randomNumber});
-    })
-    .catch(err => {
-        res.json({"error": err});
     });
 }
 
