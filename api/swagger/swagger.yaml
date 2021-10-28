@@ -44,7 +44,32 @@ paths:
           description: "Error"
           schema:
             $ref: "#/definitions/ErrorResponse"
-            
+
+  /users/user:
+    x-swagger-router-controller: user
+    delete:
+      tags:
+      - "Admin"
+      summary: "Delete a user by Title"
+      description: ""
+      operationId: deleteUserByUsername
+      produces:
+      - "application/json"
+      parameters:
+      - name: "username"
+        in: "query"
+        description: "The username of the user you want to delete"
+        required: true
+        type: string
+      responses:
+        "200":
+          description: "User successfully deleted"
+          schema:
+            type: string
+        "400":
+          description: "Invalid username"
+      security:
+      - X_Admin_API_key: []     
   /users/login:
     x-swagger-router-controller: user
     post:

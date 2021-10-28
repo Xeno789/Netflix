@@ -3,7 +3,7 @@ const request = require('request');
 module.exports = {
     swaggerSecurityHandlers: {
         Session_key: function (req, authOrSecDef, scopesOrApiKey, callback) {
-            request.get({url:'http://localhost:10010/api/v1/User'}, async function(err, httpResponse, body){
+            request.get({url:'http://localhost:3000/api/v1/User'}, async function(err, httpResponse, body){
                 if (!err && httpResponse.statusCode == 200){
                     const json = JSON.parse(body);
                     const response = json.find((user) => user.sessionId == scopesOrApiKey);
