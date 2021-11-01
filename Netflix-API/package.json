@@ -17,12 +17,13 @@
   "devDependencies": {
     "chai": "^4.3.4",
     "nock": "^13.1.3",
+    "nodemon": "^2.0.14",
     "should": "^7.1.0",
     "sinon": "^11.1.2",
     "supertest": "^1.0.0"
   },
   "scripts": {
-    "start": "swagger project start",
+    "start": "nodemon app.js",
     "test": "swagger project test"
   }
 }

@@ -2,12 +2,6 @@
 const swaggerSecurity = require('./api/helpers/swagger_security.js');
 let SwaggerExpress = require('swagger-express-mw');
 let app = require('express')();
-let express = require('express');
-const mongoose = require('mongoose');
-const restify = require('express-restify-mongoose');
-const User = require('./api/models/user');
-const Video = require('./api/models/video');
-const router = express.Router();
 module.exports = app; // for testing
 
 const config = {
