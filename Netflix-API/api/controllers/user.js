@@ -1,13 +1,13 @@
-'use strict';
-const request = require('request');
-
+`use strict`;
+const request = require(`request`);
+const hostname = "DB-API";
 function createUser(req, res) {
     let body = req.swagger.params.body["value"];
     if(Object.keys(body).length === 0){
         res.json({"error":"no parameters"});
         return;
     }
-    request.post({url:'http://localhost:3000/api/v1/User', json:{username: body.username, password: body.password}}, function(err, httpResponse, body){
+    request.post({url:`http://${hostname}:3000/api/v1/User`, json:{username: body.username, password: body.password}}, function(err, httpResponse, body){
         if (!err && httpResponse.statusCode == 201){
             res.json(body);
             return;
@@ -16,12 +16,12 @@ function createUser(req, res) {
     });
 }
 function logoutUser(req, res) {
-    request.get({url:'http://localhost:3000/api/v1/User'}, async function(err, httpResponse, body){
+    request.get({url:`http://${hostname}:3000/api/v1/User`}, async function(err, httpResponse, body){
         if (!err && httpResponse.statusCode == 200){
             const json = JSON.parse(body);
             const response = json.find((user) => user.sessionId == req.headers.session_key);
 
-            const url = `http://localhost:3000/api/v1/User/${response._id}`;
+            const url = `http://${hostname}:3000/api/v1/User/${response._id}`;
             request.patch({url: url, json:{"sessionId": null}},function(err, httpResponse, body){
                 if (!err && httpResponse.statusCode == 200){
                     res.json({"message": "Successful logout"});
@@ -35,7 +35,7 @@ function logoutUser(req, res) {
 }
 
 function loginUser(req, res) {
-    request.get({url:'http://localhost:3000/api/v1/User'}, async function(err, httpResponse, body){
+    request.get({url:`http://${hostname}:3000/api/v1/User`}, async function(err, httpResponse, body){
         if (!err && httpResponse.statusCode == 200){
             const apiRequestBody = req.swagger.params.user["value"];
             const json = JSON.parse(body);
@@ -47,7 +47,7 @@ function loginUser(req, res) {
             }
 
             let randomNumber = Math.floor(Math.random() * 100);
-            const url = `http://localhost:3000/api/v1/User/${response._id}`;
+            const url = `http://${hostname}:3000/api/v1/User/${response._id}`;
             request.patch({url: url, json:{"sessionId": randomNumber}},function(err, httpResponse, body){
                 if (!err && httpResponse.statusCode == 200){
                     res.json({"message": "Successful login", "session_key": randomNumber});
@@ -61,7 +61,7 @@ function loginUser(req, res) {
 }
 
 function deleteUserByUsername(req, res){
-    request.get({url:'http://localhost:3000/api/v1/User'}, async function(err, httpResponse, body){
+    request.get({url:`http://${hostname}:3000/api/v1/User`}, async function(err, httpResponse, body){
         if (!err && httpResponse.statusCode == 200){
             const json = JSON.parse(body);
             const userResponse = json.find((user) => user.username == req.swagger.params.username.value);
@@ -69,7 +69,7 @@ function deleteUserByUsername(req, res){
                 res.json({"error": "User not found"});
                 return;
             }
-            request.delete({url:`http://localhost:3000/api/v1/User/${userResponse._id}`},async function(err, httpResponse, body){
+            request.delete({url:`http://${hostname}:3000/api/v1/User/${userResponse._id}`},async function(err, httpResponse, body){
                 if (!err && httpResponse.statusCode == 204){
                     res.json({"message": "User deleted"});
                     return;
