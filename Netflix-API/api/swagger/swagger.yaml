@@ -10,15 +10,6 @@ consumes:
   - application/json
 produces:
   - application/json
-securityDefinitions:
-  Session_key:
-    type: "apiKey"
-    name: "Session_key"
-    in: "header"
-  X_Admin_API_key:
-    type: "apiKey"
-    name: "X_Admin_API_key"
-    in: "header"
 paths:
   /users:
     x-swagger-router-controller: user
@@ -68,8 +59,7 @@ paths:
             type: string
         "400":
           description: "Invalid username"
-      security:
-      - X_Admin_API_key: []     
+     
   /users/login:
     x-swagger-router-controller: user
     post:
@@ -129,8 +119,7 @@ paths:
           description: "Error"
           schema:
             $ref: "#/definitions/ErrorResponse"
-      security:
-      - Session_key: []
+
   
   /queue:
     x-swagger-router-controller: video
@@ -159,8 +148,7 @@ paths:
           description: "Video successfully added to your queue"
           schema:
             $ref: "#/definitions/ErrorResponse"
-      security:
-      - Session_key: []
+
     get:
       tags:
       - "Video"
@@ -180,8 +168,7 @@ paths:
           description: "Invalid video title"
           schema:
             $ref: "#/definitions/ErrorResponse"
-      security:
-      - Session_key: []
+
       
   /videos/video:
     x-swagger-router-controller: video
@@ -208,8 +195,7 @@ paths:
           description: "Invalid video title"
           schema:
             $ref: "#/definitions/ErrorResponse"
-      security:
-      - Session_key: []
+
     patch:
       tags:
       - "Admin"
@@ -232,8 +218,7 @@ paths:
             $ref: "#/definitions/Video"
         "400":
           description: "Video title does not exist"
-      security:
-      - X_Admin_API_key: []
+
     delete:
       tags:
       - "Admin"
@@ -255,8 +240,7 @@ paths:
             type: string
         "400":
           description: "Invalid video title"
-      security:
-      - X_Admin_API_key: []
+
   /videos:
     x-swagger-router-controller: video
     post:
@@ -281,8 +265,7 @@ paths:
             $ref: "#/definitions/Video"
         "400":
           description: "Video title already in use"
-      security:
-      - X_Admin_API_key: []
+
     get:
       tags:
       - "Video"
@@ -300,8 +283,7 @@ paths:
               $ref: "#/definitions/Video"
         "400":
           description: "Unexpected error"
-      security:
-      - Session_key: []
+
     
 definitions:
   ErrorResponse:

@@ -1,5 +1,5 @@
 const request = require('request');
-const hostname = "DB-API";
+const hostname = "db-api";
 module.exports = {
     swaggerSecurityHandlers: {
         Session_key: function (req, authOrSecDef, scopesOrApiKey, callback) {

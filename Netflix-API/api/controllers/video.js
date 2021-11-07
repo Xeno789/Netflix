@@ -1,6 +1,6 @@
 `use strict`;
 const request = require(`request`);
-const hostname = "DB-API";
+const hostname = "db-api";
 function addVideoToQueue(req, res){
     request.get({url:`http://${hostname}:3000/api/v1/Video`}, async function(err, httpResponse, body){
         if (!err && httpResponse.statusCode == 200){

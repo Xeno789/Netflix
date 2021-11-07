@@ -1,48 +1,93 @@
 version: "3"
 networks:
-    default:
-        name: netflix
+    netflix:
+    kong-net:
+
 services:
-  reverse-proxy:
-    image: jwilder/nginx-proxy
+  kong-database:
+    image: postgres:alpine
+    container_name: kong-db
     environment:
-        - DEFAULT_HOST=netflixapi.local
-    container_name: reverse-proxy
+      POSTGRES_DB: kong
+      POSTGRES_USER: kong
+      POSTGRES_PASSWORD: kong
+    networks:
+      - kong-net
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "kong"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+
+  kong-migrations:
+    image: kong:alpine
+    command: kong migrations bootstrap && kong migrations up && kong migrations finish
     depends_on:
-      - Netflix-API
-      - DB-API
-      - mongodb
-    volumes:
-      - /var/run/docker.sock:/tmp/docker.sock:ro
+      kong-database:
+        condition: service_healthy
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-db
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: kong
+      KONG_PG_DATABASE: kong
+    networks:
+      - kong-net
+    restart: on-failure
+
+  kong:
+    image: kong:alpine
+    container_name: kong-api
+    depends_on:
+      kong-database:
+        condition: service_healthy
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-db
+      KONG_PG_USER: kong
+      KONG_PG_PASSWORD: kong
+      KONG_PG_DATABASE: kong
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+    networks:
+      - kong-net
     ports:
-      - 80:80
-    deploy:
-      restart_policy:
-        condition: on-failure
-        max_attempts: 3
-    network_mode: netflix
-  Netflix-API:
+      - "8000:8000"
+      - "8001:8001"
+    healthcheck:
+        test: ["CMD", "kong", "health"]
+        interval: 10s
+        timeout: 10s
+        retries: 10
+    restart: on-failure
+
+  netflix-api:
     image: xeno78/netflix-api:5
     environment:
         - VIRTUAL_HOST=netflixapi.local
         - VIRTUAL_PORT=10010
-    container_name: Netflix-API
+    container_name: netflix-api
     depends_on:
       - DB-API
       - mongodb
     volumes:
       - ./Netflix-API:/netflix
+    networks:
+      - kong-net
+      - netflix
     deploy:
       restart_policy:
         condition: on-failure
         delay: 5s
         max_attempts: 3
         window: 120s
-  DB-API:
+  db-api:
     image: xeno78/db-api:4
-    container_name: DB-API
+    container_name: db-api
     depends_on:
       - mongodb
+    networks:
+      - netflix
     deploy:
       restart_policy:
         condition: on-failure
@@ -52,6 +97,8 @@ services:
   mongodb:
     image: mongo
     container_name: mongodb
+    networks:
+      - netflix
     deploy:
       restart_policy:
         condition: on-failure
