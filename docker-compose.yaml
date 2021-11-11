@@ -1,18 +1,17 @@
 version: "3"
 networks:
     netflix:
-    kong-net:
 
 services:
   kong-database:
-    image: postgres:alpine
+    image: postgres:9.5
     container_name: kong-db
     environment:
       POSTGRES_DB: kong
       POSTGRES_USER: kong
       POSTGRES_PASSWORD: kong
     networks:
-      - kong-net
+      - netflix
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "kong"]
       interval: 10s
@@ -33,7 +32,7 @@ services:
       KONG_PG_PASSWORD: kong
       KONG_PG_DATABASE: kong
     networks:
-      - kong-net
+      - netflix
     restart: on-failure
 
   kong:
@@ -50,7 +49,7 @@ services:
       KONG_PG_DATABASE: kong
       KONG_ADMIN_LISTEN: 0.0.0.0:8001
     networks:
-      - kong-net
+      - netflix
     ports:
       - "8000:8000"
       - "8001:8001"
@@ -62,27 +61,24 @@ services:
     restart: on-failure
 
   netflix-api:
-    image: xeno78/netflix-api:5
+    image: xeno78/netflix-api:8
     environment:
         - VIRTUAL_HOST=netflixapi.local
         - VIRTUAL_PORT=10010
     container_name: netflix-api
     depends_on:
-      - DB-API
+      - db-api
       - mongodb
     volumes:
       - ./Netflix-API:/netflix
     networks:
-      - kong-net
       - netflix
     deploy:
       restart_policy:
         condition: on-failure
-        delay: 5s
         max_attempts: 3
-        window: 120s
   db-api:
-    image: xeno78/db-api:4
+    image: xeno78/db-api:6
     container_name: db-api
     depends_on:
       - mongodb
@@ -91,9 +87,7 @@ services:
     deploy:
       restart_policy:
         condition: on-failure
-        delay: 5s
         max_attempts: 3
-        window: 120s
   mongodb:
     image: mongo
     container_name: mongodb
@@ -102,7 +96,4 @@ services:
     deploy:
       restart_policy:
         condition: on-failure
-        delay: 5s
         max_attempts: 3
-        window: 120s
-    
