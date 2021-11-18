@@ -51,8 +51,8 @@ services:
     networks:
       - netflix
     ports:
-      - "8000:8000"
-      - "8001:8001"
+      - "80:8000"
+      - "81:8001"
     healthcheck:
         test: ["CMD", "kong", "health"]
         interval: 10s
@@ -78,7 +78,7 @@ services:
         condition: on-failure
         max_attempts: 3
   db-api:
-    image: xeno78/db-api:6
+    image: xeno78/db-api:7
     container_name: db-api
     depends_on:
       - mongodb
