@@ -12,7 +12,7 @@ function createUser(req, res) {
 		console.log(`err:${err}`);
         if (!err && httpResponse.statusCode == 201){
             res.json(body);
-            request.post({url:`http://kong-api:8001/consumers/`, json:{username: body.username}}, function(err, httpResponse, body){
+            request.post({url:`http://kong-api:81/consumers/`, json:{username: body.username}}, function(err, httpResponse, body){
                 if (!err && httpResponse.statusCode == 201){
                     console.log("Consumer created");
                 }
@@ -35,7 +35,7 @@ function logoutUser(req, res) {
             request.patch({url: url, json:{"sessionId": null}},function(err, httpResponse, body){
                 if (!err && httpResponse.statusCode == 200){
                     res.json({"message": "Successful logout"});
-                    request.delete({url:`http://kong-api:8001/consumers/${response.username}/key-auth/${response.username}`}, function(err, httpResponse, body){
+                    request.delete({url:`http://kong-api:81/consumers/${response.username}/key-auth/${response.username}`}, function(err, httpResponse, body){
                         if (!err && httpResponse.statusCode == 201){
                             console.log("Consumer key deleted");
                         }
@@ -69,7 +69,7 @@ function loginUser(req, res) {
             request.patch({url: url, json:{"sessionId": randomNumber}},function(err, httpResponse, body){
                 if (!err && httpResponse.statusCode == 200){
                     res.json({"message": "Successful login", "session_key": randomNumber});
-                    request.post({url:`http://kong-api:8001/consumers/${body.username}/key-auth/`, headers:{key: randomNumber}}, function(err, httpResponse, body){
+                    request.post({url:`http://kong-api:81/consumers/${body.username}/key-auth/`, headers:{key: randomNumber}}, function(err, httpResponse, body){
                         if (!err && httpResponse.statusCode == 201){
                             console.log("Consumer key-auth created");
                         }

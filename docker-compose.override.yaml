@@ -1,0 +1,83 @@
+version: "${DC_VERSION}"
+networks:
+    netflix:
+
+services:
+  kong-database:
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "kong"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+
+  kong-migrations:
+    command: kong migrations bootstrap && kong migrations up && kong migrations finish
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-db
+      KONG_PG_DATABASE: ${DB_NAME}
+      KONG_PG_USER: ${DB_USER}
+      KONG_PG_PASSWORD: ${DB_PASSWORD}
+    restart: on-failure
+
+  kong:
+    environment:
+      KONG_DATABASE: postgres
+      KONG_PG_HOST: kong-db
+      KONG_PG_DATABASE: ${DB_NAME}
+      KONG_PG_USER: ${DB_USER}
+      KONG_PG_PASSWORD: ${DB_PASSWORD}
+      KONG_ADMIN_LISTEN: 0.0.0.0:${ADMIN_PORT}
+    ports:
+      - "80:8000"
+      - "${PUBLIC_ADMIN_PORT}:${ADMIN_PORT}"
+    healthcheck:
+        test: ["CMD", "kong", "health"]
+        interval: 10s
+        timeout: 10s
+        retries: 10
+    restart: on-failure
+
+  netflix-api_1:
+    environment:
+        - VIRTUAL_HOST=netflixapi.local
+        - VIRTUAL_PORT=10010
+    volumes:
+      - ./Netflix-API:/netflix
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+        
+  netflix-api_2:
+    environment:
+        - VIRTUAL_HOST=netflixapi.local
+        - VIRTUAL_PORT=10010
+    volumes:
+      - ./Netflix-API:/netflix
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+
+  db-api:
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+
+  mongodb:
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo mongodb:27017/test --quiet
+      interval: 10s
+      timeout: 20s
+      retries: 5
