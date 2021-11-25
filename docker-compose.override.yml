@@ -1,4 +1,4 @@
-version: "${DC_VERSION}"
+version: "3"
 networks:
     netflix:
 
@@ -36,13 +36,6 @@ services:
     ports:
       - "80:8000"
       - "${PUBLIC_ADMIN_PORT}:${ADMIN_PORT}"
-    links:
-      - fluentd
-    logging:
-      driver: "fluentd"
-      options:
-        fluentd-address: localhost:24224
-        tag: kong.access
     healthcheck:
         test: ["CMD", "kong", "health"]
         interval: 10s
@@ -71,7 +64,7 @@ services:
       restart_policy:
         condition: on-failure
         max_attempts: 3
-        
+
   db-api:
     deploy:
       restart_policy:
@@ -88,27 +81,3 @@ services:
       interval: 10s
       timeout: 20s
       retries: 5
-
-  fluentd:
-    build: ./fluentd
-    volumes:
-      - ./fluentd/conf:/fluentd/etc
-    links:
-      - "elasticsearch"
-    ports:
-      - "24224:24224"
-      - "24224:24224/udp"
-
-  elasticsearch:
-    image: elasticsearch
-    expose:
-      - 9200
-    ports:
-      - "9200:9200"
-
-  kibana:
-    image: kibana
-    links:
-      - "elasticsearch"
-    ports:
-      - "5601:5601"

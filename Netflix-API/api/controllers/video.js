@@ -2,7 +2,7 @@
 const request = require(`request`);
 const hostname = "db-api";
 function addVideoToQueue(req, res){
-    request.get({url:`http://${hostname}:3001/api/v1/Video`, headers:{"key":req.headers.session_key}}, async function(err, httpResponse, body){
+    request.get({url:`http://${hostname}:3001/api/v1/Video`}, async function(err, httpResponse, body){
         if (!err && httpResponse.statusCode == 200){
             const json = JSON.parse(body);
             const videoResponse = json.find((video) => video.title == req.swagger.params.videoTitle.value);

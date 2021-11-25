@@ -1,4 +1,4 @@
-version: "${DC_VERSION}"
+version: "3"
 networks:
     netflix:
 

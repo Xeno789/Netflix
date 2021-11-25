@@ -2,22 +2,29 @@
 const request = require(`request`);
 const hostname = "db-api";
 function createUser(req, res) {
-    let body = req.swagger.params.body["value"];
-	console.log(`body:${body}`);
-    if(Object.keys(body).length === 0){
+    const reqBody = req.swagger.params.body["value"];
+    if(Object.keys(reqBody).length === 0){
         res.json({"error":"no parameters"});
         return;
     }
-    request.post({url:`http://${hostname}:3001/api/v1/User`, json:{username: body.username, password: body.password}}, function(err, httpResponse, body){
+    request.post({url:`http://${hostname}:3001/api/v1/User`, json:{username: reqBody.username, password: reqBody.password}}, function(err, httpResponse, body){
 		console.log(`err:${err}`);
-        if (!err && httpResponse.statusCode == 201){
+        if (!err){
             res.json(body);
-            request.post({url:`http://kong-api:81/consumers/`, json:{username: body.username}}, function(err, httpResponse, body){
-                if (!err && httpResponse.statusCode == 201){
+            request.post({url:`http://kong-api:8001/consumers/`, json:{username: body.username}}, function(err, httpResponse, body){
+                if (!err){
                     console.log("Consumer created");
+                    request.post({url:`http://kong-api:8001/consumers/${reqBody.username}/acls`, json:{group: "user", tags: ["user"]}}, function(err, httpResponse, body){
+                        if (!err){
+                            console.log("Consumer acl group set.");
+                        }
+                        else{
+                            console.log(`Something went wrong setting the consumer's acl err:${err}`);
+                        }
+                    });
                 }
                 else{
-                    console.log("Something went wrong creating the consumer");
+                    console.log(`Something went wrong creating the consumer err:${err}`);
                 }
             });
             return;
@@ -27,22 +34,22 @@ function createUser(req, res) {
 }
 function logoutUser(req, res) {
     request.get({url:`http://${hostname}:3001/api/v1/User`}, async function(err, httpResponse, body){
-        if (!err && httpResponse.statusCode == 200){
+        if (!err){
             const json = JSON.parse(body);
             const response = json.find((user) => user.sessionId == req.headers.session_key);
 
             const url = `http://${hostname}:3001/api/v1/User/${response._id}`;
             request.patch({url: url, json:{"sessionId": null}},function(err, httpResponse, body){
-                if (!err && httpResponse.statusCode == 200){
+                if (!err){
                     res.json({"message": "Successful logout"});
-                    request.delete({url:`http://kong-api:81/consumers/${response.username}/key-auth/${response.username}`}, function(err, httpResponse, body){
-                        if (!err && httpResponse.statusCode == 201){
-                            console.log("Consumer key deleted");
-                        }
-                        else{
-                            console.log("Something went wrong deleting the consumer key");
-                        }
-                    });
+						request.delete({url:`http://kong-api:8001/consumers/${response.username}/key-auth/${req.headers.session_key}`}, function(err, httpResponse, body){
+							if (!err){
+								console.log("Consumer key deleted");
+							}
+							else{
+								console.log(`Something went wrong deleting the consumer key err:${err}`);
+							}
+						});
                     return;
                 }
                 res.json({"message": "Unexpected error"});
@@ -54,7 +61,7 @@ function logoutUser(req, res) {
 
 function loginUser(req, res) {
     request.get({url:`http://${hostname}:3001/api/v1/User`}, async function(err, httpResponse, body){
-        if (!err && httpResponse.statusCode == 200){
+        if (!err){
             const apiRequestBody = req.swagger.params.user["value"];
             const json = JSON.parse(body);
             
@@ -67,14 +74,15 @@ function loginUser(req, res) {
             let randomNumber = Math.floor(Math.random() * 100);
             const url = `http://${hostname}:3001/api/v1/User/${response._id}`;
             request.patch({url: url, json:{"sessionId": randomNumber}},function(err, httpResponse, body){
-                if (!err && httpResponse.statusCode == 200){
+                if (!err){
                     res.json({"message": "Successful login", "session_key": randomNumber});
-                    request.post({url:`http://kong-api:81/consumers/${body.username}/key-auth/`, headers:{key: randomNumber}}, function(err, httpResponse, body){
-                        if (!err && httpResponse.statusCode == 201){
+					console.log(apiRequestBody.username);
+                    request.post({url:`http://kong-api:8001/consumers/${apiRequestBody.username}/key-auth/`, json:{key: randomNumber.toString()}}, function(err, httpResponse, body){
+                        if (!err){
                             console.log("Consumer key-auth created");
                         }
                         else{
-                            console.log("Something went wrong creating the consumer key-auth");
+                            console.log(`Something went wrong creating the consumer key-auth err:${err}`);
                         }
                     });
                     return;
@@ -88,7 +96,7 @@ function loginUser(req, res) {
 
 function deleteUserByUsername(req, res){
     request.get({url:`http://${hostname}:3001/api/v1/User`}, async function(err, httpResponse, body){
-        if (!err && httpResponse.statusCode == 200){
+        if (!err){
             const json = JSON.parse(body);
             const userResponse = json.find((user) => user.username == req.swagger.params.username.value);
             if(userResponse === undefined){
@@ -96,7 +104,7 @@ function deleteUserByUsername(req, res){
                 return;
             }
             request.delete({url:`http://${hostname}:3001/api/v1/User/${userResponse._id}`},async function(err, httpResponse, body){
-                if (!err && httpResponse.statusCode == 204){
+                if (!err){
                     res.json({"message": "User deleted"});
                     return;
                 }
