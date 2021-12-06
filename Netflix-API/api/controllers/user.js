@@ -33,30 +33,17 @@ function createUser(req, res) {
     });
 }
 function logoutUser(req, res) {
-    request.get({url:`http://${hostname}:3001/api/v1/User`}, async function(err, httpResponse, body){
+    request.delete({url:`http://kong-api:8001/consumers/${req.headers.X-Consumer-Username}/key-auth/${req.headers.apikey}`}, function(err, httpResponse, body){
         if (!err){
-            const json = JSON.parse(body);
-            const response = json.find((user) => user.sessionId == req.headers.session_key);
-
-            const url = `http://${hostname}:3001/api/v1/User/${response._id}`;
-            request.patch({url: url, json:{"sessionId": null}},function(err, httpResponse, body){
-                if (!err){
-                    res.json({"message": "Successful logout"});
-						request.delete({url:`http://kong-api:8001/consumers/${response.username}/key-auth/${req.headers.session_key}`}, function(err, httpResponse, body){
-							if (!err){
-								console.log("Consumer key deleted");
-							}
-							else{
-								console.log(`Something went wrong deleting the consumer key err:${err}`);
-							}
-						});
-                    return;
-                }
-                res.json({"message": "Unexpected error"});
-                return;
-            });
+            res.json({"message": "Successful logout"});
+            console.log("Consumer key deleted");
+        }
+        else{
+            res.json({"error": err});
+            console.log(`Something went wrong deleting the consumer key err:${err}`);
         }
     });
+    return;
 }
 
 function loginUser(req, res) {
@@ -72,23 +59,15 @@ function loginUser(req, res) {
             }
 
             let randomNumber = Math.floor(Math.random() * 100);
-            const url = `http://${hostname}:3001/api/v1/User/${response._id}`;
-            request.patch({url: url, json:{"sessionId": randomNumber}},function(err, httpResponse, body){
+            request.post({url:`http://kong-api:8001/consumers/${apiRequestBody.username}/key-auth/`, json:{key: randomNumber.toString()}}, function(err, httpResponse, body){
                 if (!err){
                     res.json({"message": "Successful login", "session_key": randomNumber});
-					console.log(apiRequestBody.username);
-                    request.post({url:`http://kong-api:8001/consumers/${apiRequestBody.username}/key-auth/`, json:{key: randomNumber.toString()}}, function(err, httpResponse, body){
-                        if (!err){
-                            console.log("Consumer key-auth created");
-                        }
-                        else{
-                            console.log(`Something went wrong creating the consumer key-auth err:${err}`);
-                        }
-                    });
-                    return;
+                    console.log("Consumer key-auth created");
                 }
-                res.json({"error":"Unexpected error"});
-                return;
+                else{
+                    console.log(`Something went wrong creating the consumer key-auth err:${err}`);
+                    res.json({"error":err});
+                }
             });
         }
     });
