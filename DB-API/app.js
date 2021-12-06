@@ -9,7 +9,6 @@ app.use(express.urlencoded({
     extended: true
 }));
 app.use(express.json());
-/* mongoose.connect('mongodb+srv://admin:admin@netflix.vlpaz.mongodb.net/myFirstDatabase?retryWrites=true&w=majority'); */
 mongoose.connect('mongodb://mongodb:27017/database');
 
 restify.serve(router, User);
