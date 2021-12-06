@@ -36,13 +36,6 @@ services:
     ports:
       - "80:8000"
       - "${PUBLIC_ADMIN_PORT}:${ADMIN_PORT}"
-    links:
-      - fluentd
-    logging:
-      driver: "fluentd"
-      options:
-        fluentd-address: localhost:24224
-        tag: kong.access
     healthcheck:
         test: ["CMD", "kong", "health"]
         interval: 10s
@@ -60,6 +53,13 @@ services:
       restart_policy:
         condition: on-failure
         max_attempts: 3
+    links:
+      - fluentd
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: netflix.access
         
   netflix-api_2:
     environment:
@@ -71,6 +71,14 @@ services:
       restart_policy:
         condition: on-failure
         max_attempts: 3
+    links:
+      - fluentd
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: netflix.access
+
         
   db-api:
     deploy:
@@ -93,22 +101,40 @@ services:
     build: ./fluentd
     volumes:
       - ./fluentd/conf:/fluentd/etc
+    container_name: fluentd
     links:
       - "elasticsearch"
     ports:
       - "24224:24224"
       - "24224:24224/udp"
+    networks:
+      - netflix
 
   elasticsearch:
-    image: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.13.4
+    container_name: es01
     expose:
       - 9200
     ports:
       - "9200:9200"
+    networks:
+      - netflix
+    environment:
+      - node.name=es01
+      - cluster.name=es-docker-cluster
+      - bootstrap.memory_lock=false
+      - cluster.initial_master_nodes=es01
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
 
   kibana:
-    image: kibana
+    image: docker.elastic.co/kibana/kibana:7.13.4
+    container_name: kib01
     links:
       - "elasticsearch"
     ports:
       - "5601:5601"
+    environment:
+      ELASTICSEARCH_URL: http://es01:9200
+      ELASTICSEARCH_HOSTS: http://es01:9200
+    networks:
+      - netflix
