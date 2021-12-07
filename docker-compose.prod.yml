@@ -39,10 +39,10 @@ services:
     links:
       - fluentd
     logging:
-      driver: "fluentd"
+      driver: fluentd
       options:
         fluentd-address: localhost:24224
-        tag: kong.access
+        fluentd-async-connect: "true"
     healthcheck:
         test: ["CMD", "kong", "health"]
         interval: 10s
@@ -98,17 +98,27 @@ services:
     ports:
       - "24224:24224"
       - "24224:24224/udp"
+    networks:
+      - netflix
 
   elasticsearch:
-    image: elasticsearch
+    image: elasticsearch:6.8.20
     expose:
       - 9200
     ports:
       - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    networks:
+      - netflix
 
   kibana:
-    image: kibana
+    image: kibana:6.8.20
     links:
       - "elasticsearch"
     ports:
       - "5601:5601"
+    networks:
+      - netflix
