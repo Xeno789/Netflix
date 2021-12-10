@@ -34,4 +34,3 @@ node_modules
 config/runtime.yaml
 # Env variables
 .env
-.env
