@@ -33,7 +33,7 @@ function createUser(req, res) {
     });
 }
 function logoutUser(req, res) {
-    request.delete({url:`http://kong-api:8001/consumers/${req.headers.X-Consumer-Username}/key-auth/${req.headers.apikey}`}, function(err, httpResponse, body){
+    request.delete({url:`http://kong-api:8001/consumers/${req.get('X-consumer-username')}/key-auth/${req.headers.apikey}`}, function(err, httpResponse, body){
         if (!err){
             res.json({"message": "Successful logout"});
             console.log("Consumer key deleted");

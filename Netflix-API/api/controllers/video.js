@@ -13,7 +13,7 @@ function addVideoToQueue(req, res){
             request.get({url:`http://${hostname}:3001/api/v1/User`}, async function(err, httpResponse, body){
                 if (!err && httpResponse.statusCode == 200){
                     const json = JSON.parse(body);
-                    const userResponse = json.find((user) => user.username == req.headers.X-Consumer-Username);
+                    const userResponse = json.find((user) => user.username == req.get('X-consumer-username'));
 
                     const url = `http://${hostname}:3001/api/v1/User/${userResponse._id}`;
                     let queue = userResponse.queue;
@@ -51,7 +51,7 @@ function listVideosInQueue(req, res){
     request.get({url:`http://${hostname}:3001/api/v1/User`}, async function(err, httpResponse, body){
         if (!err && httpResponse.statusCode == 200){
             const json = JSON.parse(body);
-            const userResponse = json.find((user) => user.username == req.headers.X-Consumer-Username);
+            const userResponse = json.find((user) => user.username == req.get('X-consumer-username'));
             request.get({url:`http://${hostname}:3001/api/v1/User/${userResponse._id}`}, async function(err, httpResponse, body){
                 res.json(JSON.parse(body).queue);
             });
