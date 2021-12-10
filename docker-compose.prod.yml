@@ -71,7 +71,7 @@ services:
       restart_policy:
         condition: on-failure
         max_attempts: 3
-        
+
   db-api:
     deploy:
       restart_policy:
@@ -93,6 +93,7 @@ services:
     build: ./fluentd
     volumes:
       - ./fluentd/conf:/fluentd/etc
+    container_name: fluentd
     links:
       - "elasticsearch"
     ports:
